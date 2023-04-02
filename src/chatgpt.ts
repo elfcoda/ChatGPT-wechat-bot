@@ -27,7 +27,7 @@ const clientOptions = {
   // (Optional) Set a custom name for ChatGPT
   // chatGptLabel: 'ChatGPT',
   // (Optional) Set to true to enable `console.debug()` logging
-  debug: false,
+  debug: true,
 };
 
 const cacheOptions = {
@@ -69,6 +69,7 @@ export default class ChatGPT {
       },
     };
     console.log("response: ", response);
+    console.log("chat options: ", this.chatOption)
     // response is a markdown-formatted string
     return response;
   }
@@ -89,14 +90,14 @@ export default class ChatGPT {
       }
       const message = await this.getChatGPTReply(content, contactId);
 
-      if (
-        (contact.topic && contact?.topic() && config.groupReplyMode) ||
-        (!contact.topic && config.privateReplyMode)
-      ) {
+      if ((contact.topic && contact?.topic() && config.groupReplyMode) ||
+         (!contact.topic && config.privateReplyMode))
+      {
         const result = content + "\n-----------\n" + message;
         await contact.say(result);
-        return;
-      } else {
+      }
+      else
+      {
         await contact.say(message);
       }
     } catch (e: any) {
@@ -104,7 +105,7 @@ export default class ChatGPT {
       if (e.message.includes("timed out")) {
         await contact.say(
           content +
-            "\n-----------\nERROR: Please try again, ChatGPT timed out for waiting response."
+            "\n-----------\nERROR: 本机器人超时了，你自己看着办把."
         );
       }
     }

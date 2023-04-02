@@ -4,9 +4,9 @@ const sleep = (time: number) => {
   });
 };
 
-const awaitErrorWrap = async <T, U = any>(
+const awaitErrorWrap = async <T>(
   promise: Promise<T>
-): Promise<[U | null, T | null]> => {
+): Promise<[any, T | null]> => {
   try {
     const data = await promise;
     return [null, data];
