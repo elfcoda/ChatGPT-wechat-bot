@@ -6,9 +6,19 @@ import ChatGPT from "./chatgpt.js";
 let bot: any = {};
 const startTime = new Date();
 let chatGPTClient: any = null;
-let alreadySentMyself = false;
-let alreadySentFileHelper = false;
+let GuidMyself = generateGUID();
+let GuidFileHelper = generateGUID();
+const GuidMyselfSet = new Set<string>();
+const GuidFileHelperSet = new Set<string>();
 initProject();
+
+function generateGUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 
 function toMyself(from, to)
 {
@@ -43,25 +53,32 @@ async function onMessage(msg) {
     return;
   }
 
-  if (toFileHelper(receiver)) {
-    console.log("to file helper: ", content);
-    // respond to file helper
-    if (!alreadySentFileHelper) {
+  // available in low qps
+  // cannot send msg to myself so far, so this feature is unavailable now.
+  if (toMyself(contact, receiver)) {
+    console.log("to myself: ", content);
+    // respond to myself
+    if (!GuidMyselfSet.has(GuidMyself)) {
       console.log("start to send");
-      alreadySentFileHelper  = true;
-      await replyPrivate(alias, content, config.privateKey, chatGPTClient, receiver);
+      GuidMyselfSet.add(GuidMyself);
+      await replyPrivate(alias, content, config.privateKey, chatGPTClient, contact);
+    } else {
+      GuidMyselfSet.delete(GuidMyself);
     }
 
     return;
   }
 
-  if (toMyself(contact, receiver)) {
-    console.log("to myself: ", content);
-    // respond to myself
-    if (!alreadySentMyself) {
+  // available in low qps
+  if (toFileHelper(receiver)) {
+    console.log("to file helper: ", content);
+    // respond to file helper
+    if (!GuidFileHelperSet.has(GuidFileHelper)) {
       console.log("start to send");
-      alreadySentMyself = true;
-      await replyPrivate(alias, content, config.privateKey, chatGPTClient, contact);
+      GuidFileHelperSet.add(GuidFileHelper);
+      await replyPrivate(alias, content, config.privateKey, chatGPTClient, receiver);
+    } else {
+      GuidFileHelperSet.delete(GuidFileHelper);
     }
 
     return;
