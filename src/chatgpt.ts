@@ -98,6 +98,7 @@ export default class ChatGPT {
       }
       else
       {
+        console.log("finally sent to: ", contact, " with msg: ", message)
         await contact.say(message);
       }
     } catch (e: any) {
