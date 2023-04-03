@@ -1,5 +1,6 @@
 import { ChatGPTClient } from "@waylaidwanderer/chatgpt-api";
 import config from "./config.js";
+import secret from "./secret.js";
 
 const clientOptions = {
   // (Optional) Support for a reverse proxy for the completions endpoint (private API server).
@@ -41,8 +42,17 @@ export default class ChatGPT {
   private chatGPT: any;
   private chatOption: any;
   constructor() {
+    let apiKey = config.OPENAI_API_KEY;
+    if (apiKey === null || apiKey === "") {
+      apiKey = secret.OPENAI_API_KEY;
+      if (apiKey === null || apiKey === "") {
+        const errMsg = "OPENAI_API_KEY not found";
+        console.error(errMsg);
+        throw new Error(errMsg);
+      }
+    }
     this.chatGPT = new ChatGPTClient(
-      config.OPENAI_API_KEY,
+      apiKey,
       {
         ...clientOptions,
         reverseProxyUrl: config.reverseProxyUrl,
@@ -68,7 +78,7 @@ export default class ChatGPT {
         parentMessageId: messageId,
       },
     };
-    console.log("response: ", response);
+    // console.log("response: ", response);
     console.log("chat options: ", this.chatOption)
     // response is a markdown-formatted string
     return response;
@@ -90,16 +100,17 @@ export default class ChatGPT {
       }
       const message = await this.getChatGPTReply(content, contactId);
 
+      const hiddenChar = "\u200B";
       if ((contact.topic && contact?.topic() && config.groupReplyMode) ||
          (!contact.topic && config.privateReplyMode))
       {
         const result = content + "\n-----------\n" + message;
-        await contact.say(result);
+        await contact.say(result + hiddenChar);
       }
       else
       {
-        console.log("finally sent to: ", contact, " with msg: ", message)
-        await contact.say(message);
+        // console.log("finally sent to: ", contact, " with msg: ", message)
+        await contact.say(message + hiddenChar);
       }
     } catch (e: any) {
       console.error(e);
@@ -107,6 +118,11 @@ export default class ChatGPT {
         await contact.say(
           content +
             "\n-----------\nERROR: 本机器人超时了，你自己看着办把."
+        );
+      } else {
+        await contact.say(
+          content +
+            "\n-----------\nERROR: 本机器人故障了，你自个儿玩吧"
         );
       }
     }
