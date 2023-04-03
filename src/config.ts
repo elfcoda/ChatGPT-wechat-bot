@@ -5,7 +5,7 @@ export default {
   // 可换成你自己的，白嫖代理地址 https://ai.devtool.tech/proxy/v1/chat/completions
   reverseProxyUrl: "https://ai.devtool.tech/proxy/v1/chat/completions",
   // 在群组中设置唤醒微信机器人的关键词
-  groupKey: "",
+  groupKey: "groupKey",
   // 在私聊中设置唤醒微信机器人的关键词
   privateKey: "",
   // 重置上下文的关键词，如可设置为reset

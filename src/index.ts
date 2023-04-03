@@ -172,8 +172,8 @@ async function onMessage(msg) {
     if (!room) {
       await replyPrivate(alias, content, config.privateKey, chatGPTClient, peer);
     } else {
-      // TODO
-      // await replyGroup(room, contact, receiver, content, config.groupKey, msg, chatGPTClient);
+      console.log("start to reply my msg in group");
+      await replyMyMsgGroup(room, content, config.groupKey, chatGPTClient);
     }
     lastGPTImmediatelyReply = new Date();
 
@@ -234,6 +234,25 @@ async function replyGroup(room, contact, receiver, content, groupKey, msg, chatG
         "Content is not within the scope of the customizition format"
       );
     }
+  }
+}
+
+async function replyMyMsgGroup(room, content, groupKey, chatGPTClient)
+{
+  const topic = await room.topic();
+  console.log(`Group name: ${topic} talker: me content: ${content}`);
+
+  const pattern = RegExp(`[\\s]*${groupKey}[\\s]*`);
+  if (pattern.test(content)) {
+    console.log("Content has been matched: ", content);
+    const groupContent = content.replace(groupKey, "");
+    console.log("new content: ", groupContent);
+    await chatGPTClient.replyMessage(room, groupContent);
+    return;
+  } else {
+    console.log(
+      "Content is not within the scope of the customizition format"
+    );
   }
 }
 
