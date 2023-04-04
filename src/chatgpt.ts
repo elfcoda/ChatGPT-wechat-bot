@@ -60,12 +60,8 @@ export default class ChatGPT {
       cacheOptions
     );
     this.chatOption = {};
-    // this.test();
   }
-  async test() {
-    const response = await this.chatGPT.sendMessage("hello");
-    console.log("response test: ", response);
-  }
+
   async getChatGPTReply(content, contactId) {
     const data = await this.chatGPT.sendMessage(
       content,
@@ -86,6 +82,7 @@ export default class ChatGPT {
 
   async replyMessage(contact, content) {
     const { id: contactId } = contact;
+    const hiddenChar = "\u200B";
     try {
       if (
         content.trim().toLocaleLowerCase() ===
@@ -95,12 +92,11 @@ export default class ChatGPT {
           ...this.chatOption,
           [contactId]: {},
         };
-        await contact.say("对话已被重置");
+        await contact.say("对话已被重置" + hiddenChar);
         return;
       }
       const message = await this.getChatGPTReply(content, contactId);
 
-      const hiddenChar = "\u200B";
       if ((contact.topic && contact?.topic() && config.groupReplyMode) ||
          (!contact.topic && config.privateReplyMode))
       {
@@ -115,15 +111,9 @@ export default class ChatGPT {
     } catch (e: any) {
       console.error(e);
       if (e.message.includes("timed out")) {
-        await contact.say(
-          content +
-            "\n-----------\nERROR: 本机器人超时了，你自己看着办把."
-        );
+        await contact.say(content + "\n-----------\nERROR: 本机器人超时了，你自己看着办把." + hiddenChar);
       } else {
-        await contact.say(
-          content +
-            "\n-----------\nERROR: 本机器人故障了，你自个儿玩吧"
-        );
+        await contact.say(content + "\n-----------\nERROR: 本机器人故障了，你自个儿玩吧" + hiddenChar);
       }
     }
   }
