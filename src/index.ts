@@ -1,12 +1,13 @@
 import { WechatyBuilder } from "wechaty";
 import qrcodeTerminal from "qrcode-terminal";
-import config from "./config.js";
 import ChatGPT from "./chatgpt.js";
 import { sleep } from "./utils.js";
 import { ReplyType } from "./gptreplytype.js";
 import GPTReplyType from "./gptreplytype.js";
 import Personal from "./personal.js"
 import ReplyService from "./replyService.js"
+import QuoteInst, { QuoteInstType } from "./quoteInst.js"
+import { ConstValue } from "./constValue.js"
 
 let userMe: any = null;
 let bot: any = {};
@@ -15,10 +16,10 @@ let chatGPTClient: ChatGPT
 let gptReplyType: GPTReplyType
 let personal: Personal
 let replyService: ReplyService
+let quoteInst: QuoteInst
 
 // room topic or user id
 const queuePeerIDToReplySet = new Set<string>();
-const hiddenChar = "\u200B";
 initProject();
 
 function getPeer(from, to) {
@@ -29,24 +30,41 @@ function getPeer(from, to) {
   }
 }
 
+const quote: string = "<br/>- - - - - - - - - - - - - - -<br/>"
+function isQuote(rawContent: string): boolean {
+  return rawContent.includes(quote)
+}
+
+function splitQuote(rawContent: string): string[] {
+  // rawContent = '「alias：quote 」<br/>- - - - - - - - - - - - - - -<br/>content'
+  const [rawQuoteMsg, rawMsg] = rawContent.split(quote, 2)
+  const [rawQuoteName, rawQuoteContent] = rawQuoteMsg.split("：", 2)
+  const quoteName = rawQuoteName.trim().substring(1).trim()
+  const quoteContent = rawQuoteContent.trim().replace("」", "").trim()
+  const myMsg = rawMsg.trim();
+
+  return [quoteName, quoteContent, myMsg]
+}
+
 async function onMessage(msg) {
   // 避免重复发送
   if (msg.date() < startTime) {
     return;
   }
-  console.log("start to process msg: ", msg.text())
+  console.log("start to process msg: ", msg)
   const contact = msg.talker();
   const receiver = msg.to();
   const peer = getPeer(contact, receiver);
+  const rawContent = msg.text();
   // console.log("user: ", userMe);
-  if (msg.text().endsWith(hiddenChar)) {
+  if (rawContent.endsWith(ConstValue.HiddenChar)) {
     console.log("detected hiddenChar in the end of text");
     // sent by gpt, ignore
     return;
   } else {
     console.log("hiddenChar not found in the end of text");
   }
-  const content = msg.text().trim();
+  const content = rawContent.trim();
   const room = msg.room();
   const alias = (await contact.alias()) || (await contact.name());
   const isText = msg.type() === bot.Message.Type.Text;
@@ -70,8 +88,28 @@ async function onMessage(msg) {
     return;
   }
 
-  // personal.sendToMyself(contact, receiver, content, alias, chatGPTClient);
-  // personal.sendToFileHelper(receiver, content, alias, chatGPTClient);
+  const quote: boolean = isQuote(rawContent)
+  if (quote) {
+    const [quoteName, quoteContent, myMsg] = splitQuote(rawContent)
+    console.log(`[quoteName, quoteContent, myMsg] is: ${quoteName}, ${quoteContent}, ${myMsg}`)
+    if (room) {
+      if (quoteInst.quoteInstruction(myMsg) === QuoteInstType.Handle && msg.self()) {
+        await replyService.replyMyMsgGroup(room, quoteContent + ", " + myMsg, chatGPTClient, true)
+        return
+      }
+    } else {
+      // TODO
+      return
+    }
+  }
+
+  if (await personal.sendToMyself(contact, receiver, content, alias, chatGPTClient)) {
+    return
+  }
+
+  if (await personal.sendToFileHelper(receiver, content, alias, chatGPTClient)) {
+    return
+  }
 
   // whoever send the msg
   let replyType = await gptReplyType.getReplyType(msg);
@@ -84,7 +122,7 @@ async function onMessage(msg) {
       console.log("start to reply my msg in group");
       if (msg.self()) {
         // only I can trigger, other members should in another way
-        await replyService.replyMyMsgGroup(room, content, chatGPTClient);
+        await replyService.replyMyMsgGroup(room, content, chatGPTClient, false);
       } else {
         // other members' immediate reply, could be @ me or non-@ me
         await replyService.replyGroup(room, contact, receiver, content, msg, chatGPTClient, ReplyType.Immediately)
@@ -161,6 +199,7 @@ async function initProject() {
     gptReplyType = new GPTReplyType();
     personal = new Personal();
     replyService = new ReplyService();
+    quoteInst = new QuoteInst();
     bot = WechatyBuilder.build({
       name: "WechatEveryDay",
       puppet: "wechaty-puppet-wechat", // 如果有token，记得更换对应的puppet

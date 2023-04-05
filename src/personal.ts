@@ -43,7 +43,7 @@ export default class Personal {
     }
   }
 
-  async sendToMyself(contact, receiver, content, alias, chatGPTClient: ChatGPT): Promise<void> {
+  async sendToMyself(contact, receiver, content, alias, chatGPTClient: ChatGPT): Promise<boolean> {
     // available in low qps
     // cannot send msg to myself so far, so this feature is unavailable now.
     if (this.toMyself(contact, receiver)) {
@@ -57,11 +57,13 @@ export default class Personal {
         this.GuidMyselfSet.delete(this.GuidMyself);
       }
 
-      return;
+      return true
+    } else {
+      return false
     }
   }
 
-  async sendToFileHelper(receiver, content, alias, chatGPTClient: ChatGPT): Promise<void> {
+  async sendToFileHelper(receiver, content, alias, chatGPTClient: ChatGPT): Promise<boolean> {
     // available in low qps
     if (this.toFileHelper(receiver)) {
       console.log("to file helper: ", content);
@@ -74,7 +76,9 @@ export default class Personal {
         this.GuidFileHelperSet.delete(this.GuidFileHelper);
       }
 
-      return;
+      return true
+    } else {
+      return false
     }
   }
 }

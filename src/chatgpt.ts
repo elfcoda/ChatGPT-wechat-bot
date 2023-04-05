@@ -1,6 +1,8 @@
 import { ChatGPTClient } from "@waylaidwanderer/chatgpt-api";
 import config from "./config.js";
-import secret from "./secret.js";
+import ChatOptions from "./storage/chatOption.js"
+import ServiceConfig from "./serviceConfig.js";
+import { ConstValue } from "./constValue.js"
 
 const clientOptions = {
   // (Optional) Support for a reverse proxy for the completions endpoint (private API server).
@@ -39,18 +41,15 @@ const cacheOptions = {
 };
 
 export default class ChatGPT {
-  private chatGPT: any;
-  private chatOption: any;
+  private chatOptions: ChatOptions
+  private serviceConfig: ServiceConfig
+  private chatGPT: ChatGPTClient
+
   constructor() {
-    let apiKey = config.OPENAI_API_KEY;
-    if (apiKey === null || apiKey === "") {
-      apiKey = secret.OPENAI_API_KEY;
-      if (apiKey === null || apiKey === "") {
-        const errMsg = "OPENAI_API_KEY not found";
-        console.error(errMsg);
-        throw new Error(errMsg);
-      }
-    }
+    this.chatOptions = new ChatOptions()
+    this.serviceConfig = new ServiceConfig()
+
+    const apiKey = this.serviceConfig.getApiKey()
     this.chatGPT = new ChatGPTClient(
       apiKey,
       {
@@ -59,61 +58,49 @@ export default class ChatGPT {
       },
       cacheOptions
     );
-    this.chatOption = {};
   }
 
   async getChatGPTReply(content, contactId) {
-    const data = await this.chatGPT.sendMessage(
-      content,
-      this.chatOption[contactId]
-    );
+    const data = await this.chatGPT.sendMessage(content, this.chatOptions.getCache(contactId));
     const { response, conversationId, messageId } = data;
-    this.chatOption = {
-      [contactId]: {
-        conversationId,
-        parentMessageId: messageId,
-      },
-    };
-    // console.log("response: ", response);
-    console.log("chat options: ", this.chatOption)
+    await this.chatOptions.store(contactId, conversationId, messageId)
+
+    console.log("chat options: ", this.chatOptions.getAllCache())
     // response is a markdown-formatted string
     return response;
   }
 
-  async replyMessage(contact, content) {
+  async sayWithHiddenChar(contact, msg) {
+    await contact.say(msg + ConstValue.HiddenChar)
+  }
+
+  async replyMessage(contact, content, quote: boolean) {
     const { id: contactId } = contact;
-    const hiddenChar = "\u200B";
     try {
-      if (
-        content.trim().toLocaleLowerCase() ===
-        config.resetKey.toLocaleLowerCase()
-      ) {
-        this.chatOption = {
-          ...this.chatOption,
-          [contactId]: {},
-        };
-        await contact.say("对话已被重置" + hiddenChar);
-        return;
+      if (content.trim().toLocaleLowerCase() === config.resetKey.toLocaleLowerCase()) {
+        await this.chatOptions.delete(contactId)
+        await this.sayWithHiddenChar(contact, ConstValue.Session_Reset)
+        return
       }
       const message = await this.getChatGPTReply(content, contactId);
 
       if ((contact.topic && contact?.topic() && config.groupReplyMode) ||
-         (!contact.topic && config.privateReplyMode))
-      {
-        const result = content + "\n-----------\n" + message;
-        await contact.say(result + hiddenChar);
-      }
-      else
-      {
-        // console.log("finally sent to: ", contact, " with msg: ", message)
-        await contact.say(message + hiddenChar);
+         (!contact.topic && config.privateReplyMode)) {
+        if (quote) {
+          await this.sayWithHiddenChar(contact, message);
+        } else {
+          const result = content + ConstValue.QuoteSplit + message;
+          await this.sayWithHiddenChar(contact, result);
+        }
+      } else {
+        await this.sayWithHiddenChar(contact, message);
       }
     } catch (e: any) {
       console.error(e);
-      if (e.message.includes("timed out")) {
-        await contact.say(content + "\n-----------\nERROR: 本机器人超时了，你自己看着办把." + hiddenChar);
+      if (e.message.includes(ConstValue.CommonMsg_TimeOut)) {
+        await this.sayWithHiddenChar(contact, content + ConstValue.ChatGPT_TimeOut);
       } else {
-        await contact.say(content + "\n-----------\nERROR: 本机器人故障了，你自个儿玩吧" + hiddenChar);
+        await this.sayWithHiddenChar(contact, content + ConstValue.ChatGPT_Error);
       }
     }
   }

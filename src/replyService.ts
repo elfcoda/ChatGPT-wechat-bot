@@ -34,7 +34,7 @@ export default class ReplyService {
 
       if (pattern.test(content)) {
         const groupContent = content.replace(pattern, "");
-        await chatGPTClient.replyMessage(room, groupContent);
+        await chatGPTClient.replyMessage(room, groupContent, false);
         return;
       } else {
         console.log("Content is not within the scope of the customizition format");
@@ -48,12 +48,12 @@ export default class ReplyService {
       }
 
       console.log("should reply immediately with non-@ msg")
-      await chatGPTClient.replyMessage(room, content);
+      await chatGPTClient.replyMessage(room, content, false);
       return;
     }
   }
 
-  async replyMyMsgGroup(room, content, chatGPTClient: ChatGPT): Promise<void> {
+  async replyMyMsgGroup(room, content, chatGPTClient: ChatGPT, quote: boolean): Promise<void> {
     const topic = await room.topic();
     console.log(`Group name: ${topic} talker: me content: ${content}`);
 
@@ -68,7 +68,7 @@ export default class ReplyService {
       console.log("Content has been matched: ", content);
       const groupContent = content.replace(this.groupKey, "");
       console.log("new content: ", groupContent);
-      await chatGPTClient.replyMessage(room, groupContent);
+      await chatGPTClient.replyMessage(room, groupContent, quote);
       return;
     } else {
       console.log("Content is not within the scope of the customizition format");
@@ -82,7 +82,7 @@ export default class ReplyService {
       if (this.privateKey !== "") {
         privateContent = content.substring(this.privateKey.length).trim();
       }
-      await chatGPTClient.replyMessage(contact, privateContent);
+      await chatGPTClient.replyMessage(contact, privateContent, false);
     } else {
       console.log(
         "Content is not within the scope of the customizition format"

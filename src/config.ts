@@ -22,5 +22,6 @@ export default {
     "北极鹅",
     "企点客小服",
     "MMD 的气象学家们",
+    "长三角跳伞Fun Jumpers",
   ]
 };

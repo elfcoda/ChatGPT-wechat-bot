@@ -80,15 +80,14 @@ export default class GPTReplyType {
           return ReplyType.Immediately;
         }
 
-    const includeList = ['why', 'what', 'how', 'when', 'tell', 'Why', 'What', 'How', 'When', 'Tell', 'explain', 'Explain', 'generate', 'Generate', 'give', 'Give',
-      '?', 'ask', 'question', 'could', 'Could', 'may', 'May', 'might', 'Might', 'should', 'Should',
+    const includeList = ['why', 'what', 'how', 'when', 'tell','explain','generate', 'give', '?', 'ask', 'question', 'could', 'may', 'might', 'should',
       '为什么', '为啥', '什么', '是吗', '好吗', '怎么', '怎样', '告诉', '说说', '说下', '解释', '生成', '输出', '给出', '是不是', '？', '问', '有没有', '有吗', '能', '帮', '请', '做', '吗', '么', '吧', '把', '啥', '谁', '给我',
       '几', '多少', '哪'
     ]
 
     for (const element of includeList)
     {
-      if (content.includes(element)) {
+      if (content.toLowerCase().includes(element)) {
         console.log("catch element \"", element, "\"");
         return ReplyType.Timer;
       }
