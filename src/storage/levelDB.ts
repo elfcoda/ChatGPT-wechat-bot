@@ -7,7 +7,7 @@ export interface levelDBAllResult<VT = any> {
 
 export default class LevelDB {
   private db: any = null
-  private dbName: string = './mydb'
+  private dbName: string = './mydb/levelDB'
 
   constructor () {
     try {
