@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "dev": "node --loader ts-node/esm --inspect ./src/index.ts",
-    "test": "node --loader ts-node/esm --inspect ./src/storage/levelDB.ts",
+    "test": "node --loader ts-node/esm --inspect ./src/test.ts",
     "lint:eslint": "eslint --cache --max-warnings 0  \"{src,mock}/**/*.{ts,tsx}\" --fix",
     "lint:prettier": "prettier --write  \"src/**/*.{js,json,tsx,md}\"",
     "lint:lint-staged": "lint-staged",
@@ -23,9 +23,12 @@
   "author": "Jin",
   "license": "ISC",
   "dependencies": {
+    "@keyv/sqlite": "^3.6.5",
     "@types/node": "^18.11.11",
     "@waylaidwanderer/chatgpt-api": "^1.33.1",
     "better-sqlite3": "^8.2.0",
+    "keyv": "^4.5.2",
+    "keyv-file": "^0.2.0",
     "level-sublevel": "^6.6.5",
     "leveldown": "^6.1.1",
     "levelup": "^5.1.1",

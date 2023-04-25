@@ -1,4 +1,4 @@
-import { WechatyBuilder } from "wechaty";
+import { Friendship, WechatyBuilder, Moment } from "wechaty";
 import qrcodeTerminal from "qrcode-terminal";
 import ChatGPT from "./chatgpt.js";
 import { sleep } from "./utils.js";
@@ -20,7 +20,7 @@ let quoteInst: QuoteInst
 
 // room topic or user id
 const queuePeerIDToReplySet = new Set<string>();
-initProject();
+await initProject();
 
 function getPeer(from, to) {
   if (from.id === userMe.id) {
@@ -98,7 +98,9 @@ async function onMessage(msg) {
         return
       }
     } else {
-      // TODO
+      if (quoteInst.quoteInstruction(myMsg) === QuoteInstType.Handle && msg.self()) {
+        await replyService.replyPrivate(alias, quoteContent + ", " + myMsg, chatGPTClient, peer, true)
+      }
       return
     }
   }
@@ -117,7 +119,7 @@ async function onMessage(msg) {
 
   if (replyType === ReplyType.Immediately) {
     if (!room) {
-      await replyService.replyPrivate(alias, content, chatGPTClient, peer);
+      await replyService.replyPrivate(alias, content, chatGPTClient, peer, false);
     } else {
       console.log("start to reply my msg in group");
       if (msg.self()) {
@@ -163,7 +165,7 @@ async function onMessage(msg) {
 
     if (queuePeerIDToReplySet.has(contact.id)) {
       console.log(`finds ${contact.id} in set`);
-      await replyService.replyPrivate(alias, content, chatGPTClient, contact);
+      await replyService.replyPrivate(alias, content, chatGPTClient, contact, false);
       return;
     } else {
       console.log(`${contact.id} not found in set`);
@@ -193,9 +195,16 @@ function onLogout(user) {
   console.log(`${user} has logged out`);
 }
 
+async function onFriendship(friendship) {
+  console.log("received friend event: ", friendship)
+  // TODO
+  // throw new Error("received error and throw")
+}
+
 async function initProject() {
   try {
     chatGPTClient = new ChatGPT();
+    await chatGPTClient.loadChatOptionsCache();
     gptReplyType = new GPTReplyType();
     personal = new Personal();
     replyService = new ReplyService();
@@ -212,7 +221,8 @@ async function initProject() {
       .on("scan", onScan)
       .on("login", onLogin)
       .on("logout", onLogout)
-      .on("message", onMessage);
+      .on("message", onMessage)
+      .on("friendship", onFriendship);
 
     bot
       .start()

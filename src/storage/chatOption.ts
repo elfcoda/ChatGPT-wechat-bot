@@ -5,6 +5,11 @@ interface ChatOption {
   parentMessageId: string;
 }
 
+interface ContactOption {
+  chatOption: ChatOption;
+  session: any;
+}
+
 export default class ChatOptions {
   /*
   {
@@ -16,7 +21,7 @@ export default class ChatOptions {
   */
   private prefix: string
   private levelDB: LevelDB
-  private cache: levelDBAllResult<ChatOption>
+  private cache: levelDBAllResult<ContactOption>
 
   constructor() {
     this.prefix = "ChatOptions"
@@ -24,18 +29,23 @@ export default class ChatOptions {
     this.cache = {}
   }
 
-  getAllCache(): levelDBAllResult<ChatOption> {
+  getAllCache(): levelDBAllResult<ContactOption> {
     return this.cache
   }
 
-  getCache(contactId: string): ChatOption {
+  getCache(contactId: string): ContactOption {
     return this.cache[contactId]
   }
 
-  async store(contactId: string, conversationId: string, parentMessageId: string): Promise<void> {
-    const value: ChatOption = {
+  async store(contactId: string, conversationId: string, parentMessageId: string, session: any): Promise<void> {
+    const option: ChatOption = {
       conversationId: conversationId,
       parentMessageId: parentMessageId,
+    }
+
+    const value: ContactOption = {
+      chatOption: option,
+      session: session
     }
 
     this.cache[contactId] = value
@@ -43,13 +53,11 @@ export default class ChatOptions {
     await this.levelDB.add(this.prefix, contactId, value)
   }
 
-  async load(): Promise<levelDBAllResult<ChatOption>> {
-    const allChatOptions: levelDBAllResult<ChatOption> = await this.levelDB.getAll(this.prefix)
-    console.log("allChatOptions is: ", allChatOptions)
+  async load() {
+    const allContactOptions: levelDBAllResult<ContactOption> = await this.levelDB.getAll(this.prefix)
+    console.log("allContactOptions is: ", allContactOptions)
 
-    this.cache = allChatOptions
-
-    return allChatOptions
+    this.cache = allContactOptions
   }
 
   async delete(contactId: string): Promise<void> {

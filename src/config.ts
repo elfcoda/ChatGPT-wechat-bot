@@ -23,5 +23,8 @@ export default {
     "企点客小服",
     "MMD 的气象学家们",
     "长三角跳伞Fun Jumpers",
+    "一炉一叶三尘",
+    "MS-MMD Suzhou",
+    "字*难民营",
   ]
 };

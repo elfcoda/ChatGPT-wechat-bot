@@ -6,7 +6,7 @@ export interface levelDBAllResult<VT = any> {
 }
 
 export default class LevelDB {
-  private db: any = null
+  private db: LevelUP = null
   private dbName: string = './mydb/levelDB'
 
   constructor () {
@@ -20,38 +20,23 @@ export default class LevelDB {
   }
 
   // insert or update
-  async add(prefix: string, key: string, value: any, callback: any = null): Promise<void> {
+  async add(prefix: string, key: string, value: any): Promise<void> {
     const dbKey: string = prefix + "_" + key
     const dbValue: string = JSON.stringify(value)
 
-    await this.db.put(dbKey, dbValue, function (err) {
-      console.error("DB write error: ", err)
-      if (callback !== null && typeof(callback) === "function") {
-        callback(err)
-      }
-
-      throw new Error(err)
-    });
+    await this.db.put(dbKey, dbValue);
   }
 
   // query
-  async get(prefix: string, key: string, callback: any = null): Promise<any> {
+  async get(prefix: string, key: string): Promise<any> {
     const dbKey: string = prefix + "_" + key
 
-    const dbValue = await this.db.get(dbKey, function (err) {
-      console.error("DB query error: ", err)
-      if (callback !== null && typeof(callback) === "function") {
-        callback(err)
-      }
-
-      throw new Error(err)
-    })
-
+    const dbValue = await this.db.get(dbKey)
     return JSON.parse(dbValue.toString())
   }
 
   // query all
-  async getAll(prefix: string, callback: any = null): Promise<levelDBAllResult> {
+  async getAll(prefix: string): Promise<levelDBAllResult> {
     const dbPrefix: string = prefix + "_"
     const dbPrefixLT: string = dbPrefix + "~"
 
@@ -63,10 +48,6 @@ export default class LevelDB {
       })
       .on('error', (err) => {
         console.error("Error reading data from LevelDB: ", err)
-        if (callback !== null && typeof(callback) === "function") {
-          callback(err)
-        }
-
         throw new Error(err)
       })
       .on('end', () => {
@@ -77,19 +58,20 @@ export default class LevelDB {
   }
 
   // delete
-  async delete(prefix: string, key: string, callback: any = null): Promise<void> {
+  async delete(prefix: string, key: string): Promise<void> {
     const dbKey: string = prefix + "_" + key
 
-    await this.db.del(dbKey, function (err) {
-      console.error("DB delete error: ", err)
-      if (callback !== null && typeof(callback) === "function") {
-        callback(err)
-      }
+    await this.db.del(dbKey)
+  }
 
-      throw new Error(err)
+  async close() {
+    // close the connect
+    await this.db.close((err) => {
+      if (err) {
+        console.error('error: ', err);
+      } else {
+        console.log('levelDB has been disconnected');
+      }
     })
   }
 }
-
-const test: LevelDB = new LevelDB()
-await test.getAll("key")

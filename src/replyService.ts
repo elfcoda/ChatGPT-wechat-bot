@@ -75,14 +75,14 @@ export default class ReplyService {
     }
   }
 
-  async replyPrivate(alias, content, chatGPTClient, contact): Promise<void> {
+  async replyPrivate(alias: any, content: any, chatGPTClient: ChatGPT, contact: any, quote: boolean): Promise<void> {
     console.log(`talker: ${alias} content: ${content}`);
     if (content.startsWith(this.privateKey) || this.privateKey === "") {
       let privateContent = content;
       if (this.privateKey !== "") {
         privateContent = content.substring(this.privateKey.length).trim();
       }
-      await chatGPTClient.replyMessage(contact, privateContent, false);
+      await chatGPTClient.replyMessage(contact, privateContent, quote);
     } else {
       console.log(
         "Content is not within the scope of the customizition format"

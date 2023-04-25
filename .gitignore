@@ -4,3 +4,4 @@
 *.memory-card.json
 lib
 mydb
+test.ts
